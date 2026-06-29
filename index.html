@@ -1,0 +1,1752 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>🐺 Loup-Garou en ligne</title>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{width:100%;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#08040f;color:#e8e0f0;overflow-x:hidden;}
+button{cursor:pointer;font-family:inherit;-webkit-appearance:none;border:none;}
+input,textarea{font-family:inherit;-webkit-appearance:none;outline:none;}
+.scr{display:none;min-height:100vh;}
+.scr.on{display:block;}
+
+/* ===== HOME ===== */
+#sHome{background:radial-gradient(ellipse at 50% 20%,#2a0d60 0%,#120535 40%,#06020f 100%);display:none;flex-direction:column;align-items:center;justify-content:center;padding:2rem 1.5rem;text-align:center;}
+#sHome.on{display:flex;}
+.home-wolf{font-size:64px;margin-bottom:.5rem;filter:drop-shadow(0 0 26px #c8a84baa);}
+.home-title{font-size:2.1rem;font-weight:800;background:linear-gradient(135deg,#ffd700,#c8a84b,#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:.06em;margin-bottom:.2rem;}
+.home-sub{font-size:.72rem;color:#9080c0;letter-spacing:.22em;text-transform:uppercase;margin-bottom:2.5rem;}
+.home-card{width:100%;max-width:340px;background:rgba(255,255,255,.04);border:1px solid rgba(200,168,75,.18);border-radius:18px;padding:1.4rem;margin-bottom:1rem;}
+.home-card h3{font-size:.95rem;font-weight:700;color:#c8a84b;margin-bottom:.7rem;text-align:left;}
+.inp{width:100%;padding:12px 14px;font-size:14px;border:1px solid rgba(200,168,75,.25);border-radius:12px;background:rgba(255,255,255,.05);color:#e8e0f0;margin-bottom:8px;}
+.inp:focus{border-color:rgba(200,168,75,.6);}
+.btn{width:100%;padding:13px;font-size:.95rem;font-weight:700;border-radius:13px;letter-spacing:.03em;}
+.btn-gold{background:linear-gradient(135deg,#c8a84b,#f0d070);color:#1a0800;box-shadow:0 4px 18px rgba(200,168,75,.4);}
+.btn-purple{background:linear-gradient(135deg,#3a1a6a,#5a2a9a);color:#e0d0ff;border:1px solid rgba(180,140,255,.35);}
+.btn-ghost{background:rgba(255,255,255,.06);color:#a090c0;border:1px solid rgba(255,255,255,.12);}
+.btn-danger{background:rgba(200,40,40,.18);color:#ff8888;border:1px solid rgba(255,80,80,.3);}
+.btn:disabled{opacity:.4;}
+.err-msg{font-size:12px;color:#ff7070;margin-top:6px;text-align:center;min-height:14px;}
+
+/* ===== TOPBAR ===== */
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;background:rgba(8,4,15,.95);border-bottom:1px solid rgba(200,168,75,.15);position:sticky;top:0;z-index:30;backdrop-filter:blur(12px);}
+.topbar-left{display:flex;align-items:center;gap:8px;}
+.phase-badge{font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;letter-spacing:.05em;}
+.phase-night{background:rgba(40,20,100,.4);color:#bbaaff;border:1px solid rgba(120,80,220,.4);}
+.phase-day{background:rgba(200,150,0,.2);color:#ffdd66;border:1px solid rgba(255,200,80,.4);}
+.phase-vote{background:rgba(200,40,40,.2);color:#ff9999;border:1px solid rgba(255,80,80,.4);}
+.phase-lobby{background:rgba(80,80,80,.2);color:#bbb;}
+.timer-box{font-size:13px;font-weight:700;color:#c8a84b;font-variant-numeric:tabular-nums;}
+.code-pill{font-size:11px;color:#7060a0;background:rgba(255,255,255,.04);padding:3px 9px;border-radius:10px;letter-spacing:.05em;}
+
+/* ===== LOBBY ===== */
+#sLobby{background:#08040f;}
+.lobby-content{padding:16px;}
+.lobby-code-box{text-align:center;margin-bottom:18px;}
+.lobby-code-label{font-size:.7rem;color:#7060a0;letter-spacing:.15em;text-transform:uppercase;margin-bottom:4px;}
+.lobby-code-val{font-size:2.3rem;font-weight:900;letter-spacing:.12em;background:linear-gradient(135deg,#ffd700,#c8a84b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.player-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:16px;}
+.player-tile{background:rgba(255,255,255,.04);border:1px solid rgba(200,168,75,.12);border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:8px;}
+.player-tile.host{border-color:rgba(200,168,75,.4);}
+.player-dot{width:8px;height:8px;border-radius:50%;background:#5fd068;flex-shrink:0;}
+.player-tile-name{font-size:13px;font-weight:600;color:#e8e0f0;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.host-crown{font-size:11px;}
+.section-lbl{font-size:.72rem;color:#7060a0;letter-spacing:.12em;text-transform:uppercase;margin:14px 0 8px;}
+.role-mini-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);}
+.role-mini-name{font-size:13px;color:#e8e0f0;}
+.role-mini-ctrl{display:flex;align-items:center;gap:6px;}
+.mini-cbt{width:26px;height:26px;border-radius:8px;background:rgba(200,168,75,.12);border:1px solid rgba(200,168,75,.25);color:#c8a84b;font-size:14px;display:flex;align-items:center;justify-content:center;}
+.mini-cval{font-size:13px;font-weight:700;min-width:16px;text-align:center;}
+.lobby-warn{background:rgba(200,100,0,.12);border:1px solid rgba(200,150,0,.3);border-radius:10px;padding:9px 12px;font-size:12px;color:#ffaa44;margin:10px 0;}
+
+/* ===== GAME SCREEN ===== */
+#sGame{background:#08040f;display:none;flex-direction:column;height:100vh;}
+#sGame.on{display:flex;}
+.game-body{flex:1;overflow-y:auto;padding:14px;padding-bottom:8px;}
+.narrator-box{background:linear-gradient(135deg,rgba(200,168,75,.1),rgba(90,40,160,.08));border:1px solid rgba(200,168,75,.2);border-radius:14px;padding:14px;margin-bottom:14px;}
+.narrator-icon{font-size:1.3rem;margin-bottom:4px;}
+.narrator-text{font-size:.88rem;line-height:1.6;color:#e0d8f0;}
+.events-feed{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
+.event-item{font-size:.8rem;padding:8px 11px;border-radius:10px;line-height:1.5;}
+.event-death{background:rgba(180,20,20,.14);border:1px solid rgba(255,60,60,.25);color:#ffaaaa;}
+.event-info{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:#b0a8c8;}
+.event-win{background:rgba(200,168,75,.18);border:1px solid rgba(200,168,75,.4);color:#ffe9a8;font-weight:700;}
+
+/* role card mini in-game */
+.my-role-card{background:rgba(255,255,255,.04);border:1px solid rgba(200,168,75,.2);border-radius:14px;padding:12px;margin-bottom:14px;display:flex;align-items:center;gap:12px;}
+.my-role-ico{font-size:2rem;flex-shrink:0;}
+.my-role-info{flex:1;min-width:0;}
+.my-role-name{font-size:.95rem;font-weight:700;color:#c8a84b;}
+.my-role-status{font-size:.75rem;color:#8070a0;margin-top:2px;}
+.dead-tag{font-size:11px;background:rgba(180,20,20,.3);color:#ff9999;padding:2px 8px;border-radius:8px;font-weight:700;}
+
+/* action panel (night powers) */
+.action-panel{background:rgba(120,40,200,.08);border:1px solid rgba(160,100,255,.25);border-radius:14px;padding:14px;margin-bottom:14px;}
+.action-title{font-size:.85rem;font-weight:700;color:#c0a8ff;margin-bottom:10px;}
+.target-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;}
+.target-btn{padding:10px 8px;font-size:12.5px;font-weight:600;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#e0d8f0;text-align:center;}
+.target-btn.selected{background:rgba(160,100,255,.3);border-color:rgba(160,100,255,.6);}
+.target-btn:disabled{opacity:.3;text-decoration:line-through;}
+.action-confirm{width:100%;margin-top:10px;padding:11px;font-size:13px;font-weight:700;border-radius:11px;background:linear-gradient(135deg,#5a2a9a,#7a3ad0);color:#fff;}
+.action-confirm:disabled{opacity:.35;}
+.action-done{font-size:12px;color:#88ff99;text-align:center;margin-top:8px;font-weight:600;}
+
+/* vote panel */
+.vote-panel{background:rgba(200,40,40,.08);border:1px solid rgba(255,80,80,.25);border-radius:14px;padding:14px;margin-bottom:14px;}
+.vote-title{font-size:.85rem;font-weight:700;color:#ffaaaa;margin-bottom:10px;}
+.vote-bar-wrap{margin-bottom:8px;}
+.vote-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.vote-bar-name{font-size:12px;color:#e8e0f0;width:78px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.vote-bar-track{flex:1;height:18px;background:rgba(255,255,255,.06);border-radius:9px;overflow:hidden;}
+.vote-bar-fill{height:100%;background:linear-gradient(90deg,#cc3333,#ff6666);border-radius:9px;transition:width .3s;}
+.vote-bar-count{font-size:11px;color:#9080a0;width:18px;text-align:right;flex-shrink:0;}
+
+/* PLAYER LIST sidebar style (alive/dead) */
+.players-strip{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-bottom:14px;scrollbar-width:none;}
+.players-strip::-webkit-scrollbar{display:none;}
+.player-chip{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:4px;opacity:1;}
+.player-chip.dead{opacity:.35;}
+.chip-avatar{width:42px;height:42px;border-radius:50%;background:rgba(200,168,75,.15);border:2px solid rgba(200,168,75,.3);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#c8a84b;}
+.chip-avatar.dead{border-color:rgba(255,80,80,.4);background:rgba(180,20,20,.15);}
+.chip-name{font-size:10px;color:#a090c0;max-width:46px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+/* CHAT */
+.chat-section{margin-top:auto;border-top:1px solid rgba(200,168,75,.12);background:rgba(0,0,0,.3);}
+.chat-tabs{display:flex;border-bottom:1px solid rgba(255,255,255,.06);}
+.chat-tab{flex:1;padding:9px 4px;font-size:12px;font-weight:600;color:#7060a0;background:none;border-bottom:2px solid transparent;}
+.chat-tab.on{color:#c8a84b;border-bottom-color:#c8a84b;}
+.chat-tab.locked{opacity:.3;}
+.chat-messages{height:160px;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:6px;}
+.chat-msg{font-size:12.5px;line-height:1.4;}
+.chat-msg .who{font-weight:700;color:#c8a84b;}
+.chat-msg.wolf-channel .who{color:#ff8888;}
+.chat-msg .body{color:#d8d0e8;}
+.chat-msg.system{color:#7060a0;font-style:italic;font-size:11.5px;}
+.chat-input-row{display:flex;gap:6px;padding:10px 12px;}
+.chat-input{flex:1;padding:9px 12px;font-size:13px;border-radius:20px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#e8e0f0;}
+.chat-send{width:38px;height:38px;border-radius:50%;background:rgba(200,168,75,.18);border:1px solid rgba(200,168,75,.3);color:#c8a84b;font-size:14px;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+
+/* END GAME */
+#sEnd{background:radial-gradient(ellipse at 50% 30%,#2a1060,#08040f);display:none;flex-direction:column;align-items:center;justify-content:center;padding:2rem;text-align:center;min-height:100vh;}
+#sEnd.on{display:flex;}
+.end-emoji{font-size:4rem;margin-bottom:1rem;}
+.end-title{font-size:1.8rem;font-weight:800;margin-bottom:.5rem;}
+.end-sub{font-size:.9rem;color:#a090c0;margin-bottom:2rem;line-height:1.6;}
+.end-roles-list{width:100%;max-width:380px;text-align:left;margin-bottom:1.5rem;}
+.end-role-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.08);font-size:13px;}
+
+/* SPINNER */
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.2);border-top-color:#c8a84b;border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+
+<!-- ===== HOME ===== -->
+<div id="sHome" class="on">
+  <div class="home-wolf">🐺</div>
+  <h1 class="home-title">Loup-Garou</h1>
+  <p class="home-sub">Partie en ligne</p>
+
+  <div class="home-card">
+    <h3>Créer une partie</h3>
+    <input class="inp" id="hostName" type="text" placeholder="Votre pseudo" maxlength="16"/>
+    <button class="btn btn-gold" id="btnCreate">Créer la partie</button>
+  </div>
+
+  <div class="home-card">
+    <h3>Rejoindre une partie</h3>
+    <input class="inp" id="joinCode" type="text" placeholder="Code de la partie" maxlength="6" style="text-transform:uppercase;letter-spacing:.2em;text-align:center;font-weight:700;"/>
+    <input class="inp" id="joinName" type="text" placeholder="Votre pseudo" maxlength="16"/>
+    <button class="btn btn-purple" id="btnJoin">Rejoindre</button>
+  </div>
+
+  <div class="err-msg" id="homeErr"></div>
+</div>
+
+<!-- ===== LOBBY (host config + waiting room) ===== -->
+<div id="sLobby" class="scr">
+  <div class="topbar">
+    <div class="topbar-left">
+      <span class="phase-badge phase-lobby">SALON</span>
+      <span class="code-pill" id="lobbyCodeTop"></span>
+    </div>
+    <button class="btn btn-danger" style="width:auto;padding:6px 12px;font-size:12px;" id="btnLeaveLobby">Quitter</button>
+  </div>
+  <div class="lobby-content">
+    <div class="lobby-code-box">
+      <div class="lobby-code-label">Code de la partie</div>
+      <div class="lobby-code-val" id="lobbyCode">------</div>
+    </div>
+
+    <div class="section-lbl">Joueurs connectés (<span id="playerCount">0</span>)</div>
+    <div class="player-grid" id="playerGrid"></div>
+
+    <div id="hostControls" style="display:none;">
+      <div class="section-lbl">Configuration des rôles</div>
+      <div id="rolesConfigList"></div>
+      <div class="lobby-warn" id="lobbyWarn" style="display:none;"></div>
+      <button class="btn btn-gold" id="btnStartGame" style="margin-top:14px;">🌙 Lancer la partie</button>
+    </div>
+    <div id="guestWaiting" style="display:none;text-align:center;padding:30px 0;color:#7060a0;font-size:13px;">
+      En attente que l'hôte lance la partie<span class="spinner" style="margin-left:8px;"></span>
+    </div>
+  </div>
+</div>
+
+<!-- ===== GAME ===== -->
+<div id="sGame" class="scr">
+  <div class="topbar">
+    <div class="topbar-left">
+      <span class="phase-badge" id="phaseBadge">—</span>
+      <span class="timer-box" id="timerBox"></span>
+    </div>
+    <span class="code-pill" id="gameCodeTop"></span>
+  </div>
+
+  <div class="game-body" id="gameBody">
+    <div class="my-role-card" id="myRoleCard"></div>
+    <div class="players-strip" id="playersStrip"></div>
+    <div class="narrator-box" id="narratorBox">
+      <div class="narrator-icon">🦉</div>
+      <div class="narrator-text" id="narratorText">La partie démarre...</div>
+    </div>
+    <div id="actionPanelWrap"></div>
+    <div id="votePanelWrap"></div>
+    <div class="events-feed" id="eventsFeed"></div>
+  </div>
+
+  <div class="chat-section">
+    <div class="chat-tabs">
+      <button class="chat-tab on" id="chatTabVillage">🏘️ Village</button>
+      <button class="chat-tab locked" id="chatTabWolves">🐺 Loups</button>
+    </div>
+    <div class="chat-messages" id="chatMessages"></div>
+    <div class="chat-input-row">
+      <input class="chat-input" id="chatInput" type="text" placeholder="Écrire un message..." maxlength="200"/>
+      <button class="chat-send" id="chatSend">➤</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== END ===== -->
+<div id="sEnd" class="scr">
+  <div class="end-emoji" id="endEmoji">🏆</div>
+  <div class="end-title" id="endTitle">Fin de partie</div>
+  <div class="end-sub" id="endSub"></div>
+  <div class="end-roles-list" id="endRolesList"></div>
+  <button class="btn btn-gold" style="max-width:280px;" id="btnBackHome">↩ Retour à l'accueil</button>
+</div>
+
+<script>
+// ============================================================
+// CONFIG SUPABASE
+// ============================================================
+const SUPABASE_URL = "https://fpjpurqpguoqogstudkx.supabase.co";
+const SUPABASE_KEY = "sb_publishable_Y7fEIdx2eQQAICot8fUwPA_jsYbJfa1";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ============================================================
+// ROLE DEFINITIONS
+// ============================================================
+const ROLES = {
+  loup:    {name:"Loup-garou", icon:"🐺", team:"wolf", desc:"Éliminez un villageois chaque nuit avec vos complices.", count:0},
+  gmloup:  {name:"Grand Méchant Loup", icon:"🦷", team:"wolf", desc:"Tuez une 2e victime tant qu'aucun loup n'est mort.", count:0},
+  infect:  {name:"Infect Père des Loups", icon:"🧟", team:"wolf", desc:"Une fois, infectez votre victime au lieu de la tuer.", count:0},
+  chienloup:{name:"Chien-Loup", icon:"🐕", team:"village", desc:"Choisissez votre camp au début de la partie.", count:0},
+  abomi:   {name:"Abominable Sectaire", icon:"🧛", team:"wolf", desc:"Indétectable par la Voyante.", count:0},
+  voyante: {name:"Voyante", icon:"🔮", team:"village", desc:"Découvrez l'identité d'un joueur chaque nuit.", count:0},
+  sorciere:{name:"Sorcière", icon:"🧙", team:"village", desc:"Une potion de vie, une potion de mort, à usage unique.", count:0},
+  chasseur:{name:"Chasseur", icon:"🏹", team:"village", desc:"À votre mort, vous éliminez un joueur de votre choix.", count:0},
+  cupidon: {name:"Cupidon", icon:"💘", team:"village", desc:"Désignez deux amoureux liés la première nuit.", count:0},
+  salvateur:{name:"Salvateur", icon:"🛡️", team:"village", desc:"Protégez un joueur chaque nuit.", count:0},
+  petite_fille:{name:"Petite Fille", icon:"👧", team:"village", desc:"Espionnez les loups la nuit, au risque d'être repérée.", count:0},
+  maire:   {name:"Maire", icon:"🎖️", team:"village", desc:"Votre vote compte double. Désignez un successeur à votre mort.", count:0},
+  idiot:   {name:"Idiot du Village", icon:"🤪", team:"village", desc:"Si le village vous élimine, vous survivez mais perdez votre vote.", count:0},
+  cheval:  {name:"Chevalier Épée Rouillée", icon:"⚔️", team:"village", desc:"Si les loups vous dévorent, le loup attaquant mourra 3 jours plus tard.", count:0},
+  vv:      {name:"Villageois-Villageois", icon:"👶", team:"village", desc:"Aucun pouvoir. Montrez votre carte pour prouver votre innocence.", count:0},
+  ours:    {name:"Montreur d'Ours", icon:"🐻", team:"village", desc:"L'ours grogne si un de vos voisins est un loup.", count:0},
+  renard:  {name:"Renard", icon:"🦊", team:"village", desc:"Sondez 3 joueurs : détectez si un loup s'y trouve.", count:0},
+  juge:    {name:"Juge Bègue", icon:"⚖️", team:"village", desc:"Une fois, déclenchez un second vote immédiat.", count:0},
+  sjum:    {name:"Sœur Jumelle", icon:"👭", team:"village", desc:"Reconnaissez votre jumelle dès la première nuit.", count:0},
+  dsoeurs: {name:"Deux Sœurs", icon:"👯", team:"village", desc:"Reconnaissez votre sœur dès la première nuit.", count:0},
+  tfreres: {name:"Trois Frères", icon:"👨‍👦‍👦", team:"village", desc:"Reconnaissez vos frères dès la première nuit.", count:0},
+  enfant:  {name:"Enfant Sauvage", icon:"🌿", team:"village", desc:"Choisissez un modèle. S'il meurt, vous devenez loup.", count:0},
+  gitane:  {name:"Gitane", icon:"🔯", team:"village", desc:"Voyez la carte d'un joueur éliminé avant sa révélation.", count:0},
+  serv:    {name:"Servante Dévouée", icon:"🫅", team:"village", desc:"Une fois, prenez la place d'un joueur éliminé le jour.", count:0},
+  corbeau: {name:"Corbeau", icon:"🪶", team:"village", desc:"Désignez un suspect : il reçoit 2 voix de plus au vote.", count:0},
+  bouc:    {name:"Bouc Émissaire", icon:"🐐", team:"village", desc:"En cas d'égalité au vote, vous êtes éliminé à leur place.", count:0},
+  ange:    {name:"Ange", icon:"😇", team:"solo", desc:"Si le village vous élimine au 1er vote, vous gagnez seul.", count:0},
+  flute:   {name:"Joueur de Flûte", icon:"🎶", team:"solo", desc:"Ensorcelez 2 joueurs chaque nuit. Si tous les vivants sont ensorcelés, vous gagnez seul.", count:0},
+  comed:   {name:"Comédien", icon:"🎭", team:"village", desc:"Empruntez le pouvoir d'un autre rôle, une fois par rôle pioché.", count:0},
+  villageois:{name:"Villageois", icon:"🧑", team:"village", desc:"Démasquez les loups et votez le jour.", count:0},
+};
+
+const TEAM_LABEL = {wolf:"Loups", village:"Village"};
+
+// ============================================================
+// STATE
+// ============================================================
+let state = {
+  gameId: null,
+  gameCode: null,
+  playerId: null,
+  sessionToken: null,
+  playerName: null,
+  isHost: false,
+  myRole: null,
+  players: [],
+  game: null,
+  roleConfig: {
+    loup:1, gmloup:0, infect:0, chienloup:0, abomi:0,
+    voyante:1, sorciere:0, chasseur:0, cupidon:0, salvateur:0,
+    petite_fille:0, maire:0, idiot:0, cheval:0, vv:0,
+    ours:0, renard:0, juge:0, sjum:0, dsoeurs:0, tfreres:0,
+    enfant:0, gitane:0, serv:0, corbeau:0, bouc:0, ange:0,
+    flute:0, comed:0,
+    villageois:2
+  },
+  selectedTarget: null,
+  myNightActionDone: false,
+  myVote: null,
+  currentChannel: 'village',
+  timerInterval: null,
+  lastEventId: null,
+  channels: [],
+  witchSavePotionUsed: false,
+  witchKillPotionUsed: false,
+  pendingHunterShot: false,
+  spiedThisNight: false,
+  pendingHunterDeath: false,
+  myTwinGroup: null,
+  myWildChildModel: null,
+  myNeighborOrder: null,
+  servantUsed: false,
+  judgeUsed: false,
+  comedianRoles: [],
+  comedianUsedRoles: [],
+};
+
+function genCode(){
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let c = "";
+  for(let i=0;i<5;i++) c += chars[Math.floor(Math.random()*chars.length)];
+  return c;
+}
+function genToken(){
+  return Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
+function show(id){
+  document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));
+  document.getElementById('sHome').classList.remove('on');
+  const el = document.getElementById(id);
+  el.classList.add('on');
+}
+
+// ============================================================
+// HOME: CREATE / JOIN
+// ============================================================
+document.getElementById('btnCreate').addEventListener('click', async () => {
+  const name = document.getElementById('hostName').value.trim();
+  const errEl = document.getElementById('homeErr');
+  if(!name){ errEl.textContent = "Entrez un pseudo."; return; }
+  errEl.textContent = "";
+  const btn = document.getElementById('btnCreate');
+  btn.disabled = true; btn.textContent = "Création...";
+
+  try {
+    const code = genCode();
+    const { data: game, error: gErr } = await sb.from('games').insert({
+      code, status: 'lobby', role_config: state.roleConfig
+    }).select().single();
+    if(gErr) throw gErr;
+
+    const token = genToken();
+    const { data: player, error: pErr } = await sb.from('players').insert({
+      game_id: game.id, name, is_host: true, session_token: token
+    }).select().single();
+    if(pErr) throw pErr;
+
+    state.gameId = game.id;
+    state.gameCode = game.code;
+    state.playerId = player.id;
+    state.sessionToken = token;
+    state.playerName = name;
+    state.isHost = true;
+
+    enterLobby();
+  } catch(e) {
+    errEl.textContent = "Erreur : " + (e.message || "impossible de créer la partie.");
+  } finally {
+    btn.disabled = false; btn.textContent = "Créer la partie";
+  }
+});
+
+document.getElementById('btnJoin').addEventListener('click', async () => {
+  const code = document.getElementById('joinCode').value.trim().toUpperCase();
+  const name = document.getElementById('joinName').value.trim();
+  const errEl = document.getElementById('homeErr');
+  if(!code || !name){ errEl.textContent = "Remplissez le code et votre pseudo."; return; }
+  errEl.textContent = "";
+  const btn = document.getElementById('btnJoin');
+  btn.disabled = true; btn.textContent = "Connexion...";
+
+  try {
+    const { data: game, error: gErr } = await sb.from('games').select().eq('code', code).single();
+    if(gErr || !game){ throw new Error("Partie introuvable."); }
+    if(game.status !== 'lobby'){ throw new Error("Cette partie a déjà commencé."); }
+
+    const token = genToken();
+    const { data: player, error: pErr } = await sb.from('players').insert({
+      game_id: game.id, name, is_host: false, session_token: token
+    }).select().single();
+    if(pErr) throw pErr;
+
+    state.gameId = game.id;
+    state.gameCode = game.code;
+    state.playerId = player.id;
+    state.sessionToken = token;
+    state.playerName = name;
+    state.isHost = false;
+    state.roleConfig = game.role_config || state.roleConfig;
+
+    enterLobby();
+  } catch(e) {
+    errEl.textContent = e.message || "Impossible de rejoindre.";
+  } finally {
+    btn.disabled = false; btn.textContent = "Rejoindre";
+  }
+});
+
+// ============================================================
+// LOBBY
+// ============================================================
+function enterLobby(){
+  show('sLobby');
+  document.getElementById('lobbyCode').textContent = state.gameCode;
+  document.getElementById('lobbyCodeTop').textContent = "Code: " + state.gameCode;
+
+  if(state.isHost){
+    document.getElementById('hostControls').style.display = 'block';
+    document.getElementById('guestWaiting').style.display = 'none';
+    renderRolesConfig();
+  } else {
+    document.getElementById('hostControls').style.display = 'none';
+    document.getElementById('guestWaiting').style.display = 'block';
+  }
+
+  subscribeToGame();
+  refreshPlayers();
+}
+
+function renderRolesConfig(){
+  const wrap = document.getElementById('rolesConfigList');
+  let html = '';
+  for(const [id, role] of Object.entries(ROLES)){
+    html += `<div class="role-mini-row">
+      <span class="role-mini-name">${role.icon} ${role.name}</span>
+      <div class="role-mini-ctrl">
+        <button class="mini-cbt" data-id="${id}" data-d="-1">−</button>
+        <span class="mini-cval" id="cnt_${id}">${state.roleConfig[id]||0}</span>
+        <button class="mini-cbt" data-id="${id}" data-d="1">+</button>
+      </div>
+    </div>`;
+  }
+  wrap.innerHTML = html;
+  wrap.querySelectorAll('.mini-cbt').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.getAttribute('data-id');
+      const d = parseInt(btn.getAttribute('data-d'));
+      state.roleConfig[id] = Math.max(0, (state.roleConfig[id]||0) + d);
+      document.getElementById('cnt_'+id).textContent = state.roleConfig[id];
+      checkLobbyWarn();
+      await sb.from('games').update({ role_config: state.roleConfig }).eq('id', state.gameId);
+    });
+  });
+  checkLobbyWarn();
+}
+
+function checkLobbyWarn(){
+  const total = Object.values(state.roleConfig).reduce((a,b)=>a+b,0);
+  const np = state.players.length;
+  const warnEl = document.getElementById('lobbyWarn');
+  const startBtn = document.getElementById('btnStartGame');
+  if(total !== np || total < 3){
+    warnEl.style.display = 'block';
+    warnEl.textContent = total < 3
+      ? "Minimum 3 joueurs requis."
+      : `${total} rôle(s) configuré(s) pour ${np} joueur(s) — ajustez pour qu'ils correspondent.`;
+    startBtn.disabled = true;
+  } else {
+    warnEl.style.display = 'none';
+    startBtn.disabled = false;
+  }
+}
+
+async function refreshPlayers(){
+  const { data } = await sb.from('players').select().eq('game_id', state.gameId).order('joined_at');
+  state.players = data || [];
+  renderPlayerGrid();
+  if(state.isHost) checkLobbyWarn();
+}
+
+function renderPlayerGrid(){
+  document.getElementById('playerCount').textContent = state.players.length;
+  document.getElementById('playerGrid').innerHTML = state.players.map(p => `
+    <div class="player-tile ${p.is_host?'host':''}">
+      <span class="player-dot"></span>
+      <span class="player-tile-name">${escapeHtml(p.name)}</span>
+      ${p.is_host?'<span class="host-crown">👑</span>':''}
+    </div>`).join('');
+}
+
+document.getElementById('btnStartGame').addEventListener('click', async () => {
+  await startGame();
+});
+
+document.getElementById('btnLeaveLobby').addEventListener('click', async () => {
+  await leaveGame();
+});
+
+// ============================================================
+// START GAME — assign roles, set phase
+// ============================================================
+async function startGame(){
+  const pool = [];
+  for(const [id, count] of Object.entries(state.roleConfig)){
+    for(let i=0;i<count;i++) pool.push(id);
+  }
+  // shuffle
+  for(let i=pool.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [pool[i],pool[j]] = [pool[j],pool[i]];
+  }
+  // shuffle players too for fair assignment
+  const shuffledPlayers = [...state.players];
+  for(let i=shuffledPlayers.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [shuffledPlayers[i],shuffledPlayers[j]] = [shuffledPlayers[j],shuffledPlayers[i]];
+  }
+
+  let mayorPlayerId = null;
+  let comedianId = null;
+  for(let i=0;i<shuffledPlayers.length;i++){
+    await sb.from('players').update({ role_id: pool[i], is_alive: true }).eq('id', shuffledPlayers[i].id);
+    if(pool[i] === 'maire') mayorPlayerId = shuffledPlayers[i].id;
+    if(pool[i] === 'comed') comedianId = shuffledPlayers[i].id;
+  }
+
+  let openingMsg = "🌙 La nuit tombe sur le village pour la première fois. Les rôles ont été distribués en secret.";
+  if(mayorPlayerId){
+    await sb.from('games').update({ mayor_id: mayorPlayerId }).eq('id', state.gameId);
+    openingMsg += " 🎖️ Un Maire a été désigné parmi vous — son vote comptera double.";
+  }
+  if(comedianId){
+    // Pick 3 random distinct roles in play (excluding comedian itself) for him to borrow from
+    const rolesInPlay = [...new Set(pool.filter(r => r !== 'comed'))];
+    const shuffledRoles = [...rolesInPlay];
+    for(let i=shuffledRoles.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [shuffledRoles[i],shuffledRoles[j]] = [shuffledRoles[j],shuffledRoles[i]];
+    }
+    const picked = shuffledRoles.slice(0, 3);
+    await sb.from('players').update({ comedian_roles: picked, comedian_used_roles: [] }).eq('id', comedianId);
+  }
+
+  await sb.from('game_events').insert({
+    game_id: state.gameId, phase_number: 0, event_type: 'phase_change',
+    content: openingMsg
+  });
+
+  await sb.from('games').update({
+    status: 'night', phase_number: 1, phase_started_at: new Date().toISOString(),
+    phase_duration_seconds: 45
+  }).eq('id', state.gameId);
+}
+
+// ============================================================
+// LEAVE GAME
+// ============================================================
+async function leaveGame(){
+  if(state.playerId){
+    await sb.from('players').delete().eq('id', state.playerId);
+  }
+  unsubscribeAll();
+  resetState();
+  show('sHome');
+}
+
+function resetState(){
+  if(state.timerInterval) clearInterval(state.timerInterval);
+  state = {
+    gameId:null, gameCode:null, playerId:null, sessionToken:null, playerName:null,
+    isHost:false, myRole:null, players:[], game:null,
+    roleConfig:{loup:1,voyante:1,sorciere:0,chasseur:0,cupidon:0,salvateur:0,villageois:2},
+    selectedTarget:null, myNightActionDone:false, myVote:null, currentChannel:'village',
+    timerInterval:null, lastEventId:null, channels:[]
+  };
+}
+
+document.getElementById('btnBackHome').addEventListener('click', async () => {
+  unsubscribeAll();
+  resetState();
+  show('sHome');
+});
+
+// ============================================================
+// REALTIME SUBSCRIPTIONS
+// ============================================================
+function subscribeToGame(){
+  unsubscribeAll();
+
+  const gameChannel = sb.channel('game_'+state.gameId)
+    .on('postgres_changes', { event:'*', schema:'public', table:'games', filter:`id=eq.${state.gameId}` },
+      (payload) => onGameUpdate(payload.new))
+    .on('postgres_changes', { event:'*', schema:'public', table:'players', filter:`game_id=eq.${state.gameId}` },
+      () => refreshPlayers())
+    .on('postgres_changes', { event:'INSERT', schema:'public', table:'chat_messages', filter:`game_id=eq.${state.gameId}` },
+      (payload) => onNewChatMessage(payload.new))
+    .on('postgres_changes', { event:'INSERT', schema:'public', table:'game_events', filter:`game_id=eq.${state.gameId}` },
+      (payload) => onNewEvent(payload.new))
+    .subscribe();
+
+  state.channels.push(gameChannel);
+
+  // initial fetch
+  sb.from('games').select().eq('id', state.gameId).single().then(({data}) => {
+    if(data) onGameUpdate(data);
+  });
+}
+
+function unsubscribeAll(){
+  state.channels.forEach(ch => sb.removeChannel(ch));
+  state.channels = [];
+}
+
+async function onGameUpdate(game){
+  const wasLobby = !state.game || state.game.status === 'lobby';
+  state.game = game;
+
+  if(game.status === 'lobby'){
+    if(document.getElementById('sLobby').classList.contains('on') === false) {
+      // shouldn't happen but safety
+    }
+    return;
+  }
+
+  if(game.status === 'ended'){
+    await showEndScreen();
+    return;
+  }
+
+  // transitioning into active game
+  if(!document.getElementById('sGame').classList.contains('on')){
+    show('sGame');
+    document.getElementById('gameCodeTop').textContent = "Code: " + state.gameCode;
+    subscribeToChat();
+  }
+
+  await refreshPlayers();
+  await loadMyRole();
+  renderGameScreen();
+  startTimer();
+  loadRecentEvents();
+}
+
+async function loadMyRole(){
+  const { data } = await sb.from('players').select().eq('id', state.playerId).single();
+  if(data){
+    state.myRole = data.role_id;
+    state.myIsAlive = data.is_alive;
+    state.myInLoveWith = data.in_love_with;
+    state.witchSavePotionUsed = data.witch_save_used;
+    state.witchKillPotionUsed = data.witch_kill_used;
+    state.myCanVote = data.can_vote !== false;
+    state.myIsMayor = state.game && state.game.mayor_id === state.playerId;
+    state.myTwinGroup = data.twin_group;
+    state.myWildChildModel = data.wild_child_model_id;
+    state.myNeighborOrder = data.neighbor_order;
+    state.servantUsed = data.servant_used;
+    state.judgeUsed = data.judge_used;
+    state.myIsInfected = data.is_infected;
+    state.myChosenWolfSide = data.chosen_wolf_side;
+    state.myIsEnchanted = data.is_enchanted;
+    state.comedianRoles = data.comedian_roles || [];
+    state.comedianUsedRoles = data.comedian_used_roles || [];
+  }
+}
+
+// ============================================================
+// GAME RENDERING
+// ============================================================
+function renderGameScreen(){
+  renderPhaseBadge();
+  renderMyRoleCard();
+  renderPlayersStrip();
+  renderNarrator();
+  renderActionPanel();
+  renderVotePanel();
+  renderChatTabs();
+}
+
+function renderPhaseBadge(){
+  const badge = document.getElementById('phaseBadge');
+  const status = state.game.status;
+  const labels = {
+    night: ['🌙 NUIT', 'phase-night'],
+    day_discuss: ['☀️ DISCUSSION', 'phase-day'],
+    day_vote: ['⚖️ VOTE', 'phase-vote'],
+  };
+  const [label, cls] = labels[status] || ['—', 'phase-lobby'];
+  badge.textContent = label;
+  badge.className = 'phase-badge ' + cls;
+}
+
+function renderMyRoleCard(){
+  const role = ROLES[state.myRole];
+  const card = document.getElementById('myRoleCard');
+  if(!role){ card.innerHTML = ''; return; }
+  const me = state.players.find(p => p.id === state.playerId);
+  const alive = me ? me.is_alive : true;
+  const isMayor = state.game && state.game.mayor_id === state.playerId;
+  const idiotRevealed = me && me.idiot_revealed;
+  card.innerHTML = `
+    <span class="my-role-ico">${role.icon}</span>
+    <div class="my-role-info">
+      <div class="my-role-name">${role.name} ${isMayor ? '🎖️' : ''}</div>
+      <div class="my-role-status">${role.desc}</div>
+    </div>
+    ${!alive ? '<span class="dead-tag">MORT</span>' : ''}
+    ${idiotRevealed ? '<span class="dead-tag" style="background:rgba(200,150,0,.3);color:#ffdd88;">SANS VOTE</span>' : ''}
+  `;
+}
+
+function renderPlayersStrip(){
+  document.getElementById('playersStrip').innerHTML = state.players.map(p => {
+    const initials = p.name.slice(0,2).toUpperCase();
+    return `<div class="player-chip ${p.is_alive?'':'dead'}">
+      <div class="chip-avatar ${p.is_alive?'':'dead'}">${p.is_alive ? initials : '💀'}</div>
+      <div class="chip-name">${escapeHtml(p.name)}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderNarrator(){
+  const status = state.game.status;
+  const me = state.players.find(p => p.id === state.playerId);
+  const alive = me ? me.is_alive : true;
+  let text = "";
+  if(!alive){
+    text = "Vous avez été éliminé. Vous pouvez observer la partie mais ne pouvez plus agir.";
+  } else if(status === 'night'){
+    text = "Le village dort. Les rôles spéciaux s'activent dans l'ombre...";
+  } else if(status === 'day_discuss'){
+    text = "Le soleil se lève. Discutez et démasquez les loups-garous avant le vote.";
+  } else if(status === 'day_vote'){
+    text = "L'heure du jugement est venue. Votez pour éliminer un suspect.";
+  }
+  document.getElementById('narratorText').textContent = text;
+}
+
+// ============================================================
+// ACTION PANEL (night powers)
+// ============================================================
+function renderActionPanel(){
+  const wrap = document.getElementById('actionPanelWrap');
+  const me = state.players.find(p => p.id === state.playerId);
+  if(!me) { wrap.innerHTML = ''; return; }
+
+  // Hunter's revenge shot: triggers once right after death, regardless of phase
+  if(!me.is_alive && me.role_id === 'chasseur' && !me.has_used_power){
+    renderHunterShotPanel(wrap, me);
+    return;
+  }
+
+  if(!me.is_alive || state.game.status !== 'night'){
+    wrap.innerHTML = '';
+    return;
+  }
+
+  const role = state.myRole;
+  const others = state.players.filter(p => p.is_alive && p.id !== state.playerId);
+
+  if(role === 'loup' || role === 'gmloup' || role === 'abomi'){
+    const targets = state.players.filter(p => p.is_alive && ROLES[p.role_id]?.team !== 'wolf' && !p.is_infected);
+    const label = role === 'gmloup' && !hasAnyWolfDied() ? "🦷 Choisissez une victime (vous pouvez en tuer 2 tant qu'aucun loup n'est mort)" : "🐺 Choisissez une victime";
+    wrap.innerHTML = buildTargetPanel(label, targets, 'wolf_kill');
+  } else if(role === 'infect'){
+    renderInfectPanel(wrap);
+  } else if(role === 'chienloup' && state.game.phase_number === 1 && state.myChosenWolfSide === null){
+    renderDogWolfPanel(wrap);
+  } else if(role === 'voyante'){
+    wrap.innerHTML = buildTargetPanel("🔮 Sondez l'identité d'un joueur", others, 'seer_check');
+  } else if(role === 'salvateur'){
+    const targets = state.players.filter(p => p.is_alive);
+    wrap.innerHTML = buildTargetPanel("🛡️ Protégez un joueur cette nuit", targets, 'guard_protect');
+  } else if(role === 'cupidon' && state.game.phase_number === 1){
+    const targets = state.players.filter(p => p.is_alive);
+    wrap.innerHTML = buildTargetPanel("💘 Liez deux amoureux (sélectionnez 2)", targets, 'cupid_link', 2);
+  } else if(role === 'sorciere'){
+    renderWitchPanel(wrap);
+  } else if(role === 'petite_fille'){
+    renderLittleGirlPanel(wrap);
+  } else if(role === 'renard'){
+    renderFoxPanel(wrap);
+  } else if(role === 'enfant' && state.game.phase_number === 1 && !state.myWildChildModel){
+    wrap.innerHTML = buildTargetPanel("🌿 Choisissez secrètement un modèle", others, 'wild_child_pick');
+  } else if((role === 'sjum' || role === 'dsoeurs' || role === 'tfreres') && state.game.phase_number === 1){
+    renderTwinRevealPanel(wrap, role);
+  } else if(role === 'corbeau'){
+    wrap.innerHTML = buildTargetPanel("🪶 Désignez un suspect (+2 voix contre lui)", others, 'crow_mark');
+  } else if(role === 'gitane'){
+    renderGypsyPanel(wrap);
+  } else if(role === 'flute'){
+    renderFlutistPanel(wrap);
+  } else if(role === 'comed'){
+    renderComedianPanel(wrap);
+  } else {
+    wrap.innerHTML = `<div class="action-panel"><div class="action-title">🌙 Vous n'avez aucune action cette nuit.</div></div>`;
+    return;
+  }
+  attachActionHandlers();
+}
+
+function renderFlutistPanel(wrap){
+  const targets = state.players.filter(p => p.is_alive && !p.is_enchanted && p.id !== state.playerId);
+  if(targets.length === 0){
+    wrap.innerHTML = `<div class="action-panel"><div class="action-title">🎶 Tout le monde est déjà ensorcelé...</div></div>`;
+    return;
+  }
+  wrap.innerHTML = `<div class="action-panel" style="border-color:rgba(0,212,170,.3);background:rgba(0,100,80,.08);">
+    <div class="action-title" style="color:#55ddbb;">🎶 Ensorcelez 2 joueurs (sélectionnez 2)</div>
+    <div class="target-grid" id="fluteTargets">
+      ${targets.map(t => `<button class="target-btn" data-target="${t.id}">${escapeHtml(t.name)}</button>`).join('')}
+    </div>
+    <button class="action-confirm" id="fluteBtn" disabled style="margin-top:8px;background:linear-gradient(135deg,#007766,#00aa88);">🎵 Jouer la mélodie</button>
+    <div id="actionDoneMsg"></div>
+  </div>`;
+  let sel = [];
+  const btn = document.getElementById('fluteBtn');
+  document.getElementById('fluteTargets').querySelectorAll('.target-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      const id = b.getAttribute('data-target');
+      if(sel.includes(id)){ sel = sel.filter(x=>x!==id); b.classList.remove('selected'); }
+      else if(sel.length < 2){ sel.push(id); b.classList.add('selected'); }
+      btn.disabled = sel.length !== Math.min(2, targets.length);
+    });
+  });
+  btn.addEventListener('click', async () => {
+    btn.disabled = true;
+    for(const id of sel){
+      await sb.from('players').update({ is_enchanted: true }).eq('id', id);
+    }
+    document.getElementById('actionDoneMsg').innerHTML = '<div class="action-done">✓ Mélodie jouée, ils sont ensorcelés</div>';
+    document.querySelectorAll('#actionPanelWrap button').forEach(b=>b.disabled=true);
+  });
+}
+
+function renderComedianPanel(wrap){
+  if(!state.comedianRoles || state.comedianRoles.length === 0){
+    wrap.innerHTML = `<div class="action-panel"><div class="action-title">🎭 Vous attendez de découvrir vos 3 rôles d'emprunt (assignés au lancement).</div></div>`;
+    return;
+  }
+  const usable = state.comedianRoles.filter(r => !state.comedianUsedRoles.includes(r));
+  if(usable.length === 0){
+    wrap.innerHTML = `<div class="action-panel"><div class="action-title">🎭 Vous avez utilisé les trois pouvoirs empruntés. Vous n'avez plus d'action.</div></div>`;
+    return;
+  }
+  wrap.innerHTML = `<div class="action-panel" style="border-color:rgba(200,80,200,.3);background:rgba(100,30,100,.08);">
+    <div class="action-title" style="color:#dd88dd;">🎭 Empruntez un pouvoir ce soir</div>
+    <p style="font-size:.8rem;color:#e0d8f0;margin-bottom:8px;">Rôles disponibles (chacun utilisable une seule fois pour toute la partie) :</p>
+    <div class="target-grid" id="comedRoleChoice">
+      ${usable.map(r => `<button class="target-btn" data-role="${r}">${ROLES[r]?.icon||'?'} ${ROLES[r]?.name||r}</button>`).join('')}
+    </div>
+    <div id="comedSubPanel" style="margin-top:10px;"></div>
+  </div>`;
+  document.getElementById('comedRoleChoice').querySelectorAll('.target-btn').forEach(b => {
+    b.addEventListener('click', async () => {
+      document.getElementById('comedRoleChoice').querySelectorAll('.target-btn').forEach(x=>x.classList.remove('selected'));
+      b.classList.add('selected');
+      const chosenRole = b.getAttribute('data-role');
+      await renderComedianSubAction(chosenRole);
+    });
+  });
+}
+
+async function renderComedianSubAction(chosenRole){
+  const sub = document.getElementById('comedSubPanel');
+  const others2 = state.players.filter(p => p.is_alive && p.id !== state.playerId);
+  let actionType = null;
+  let targets = others2;
+  if(chosenRole === 'loup'){ actionType = 'wolf_kill'; targets = state.players.filter(p=>p.is_alive && ROLES[p.role_id]?.team!=='wolf'); }
+  else if(chosenRole === 'voyante'){ actionType = 'seer_check'; }
+  else if(chosenRole === 'salvateur'){ actionType = 'guard_protect'; targets = state.players.filter(p=>p.is_alive); }
+  else if(chosenRole === 'corbeau'){ actionType = 'crow_mark'; }
+  else {
+    sub.innerHTML = `<p style="font-size:.8rem;color:#cc99cc;">Ce pouvoir n'a pas d'action directe câblée — marquez-le simplement comme utilisé.</p>
+      <button class="action-confirm" id="comedNoop" style="background:linear-gradient(135deg,#882288,#aa33aa);">Confirmer l'usage</button>`;
+    document.getElementById('comedNoop').addEventListener('click', async () => {
+      await markComedianRoleUsed(chosenRole);
+    });
+    return;
+  }
+  sub.innerHTML = `<div class="target-grid" id="comedTargets">
+      ${targets.map(t => `<button class="target-btn" data-target="${t.id}">${escapeHtml(t.name)}</button>`).join('')}
+    </div>
+    <button class="action-confirm" id="comedConfirm" disabled style="margin-top:8px;background:linear-gradient(135deg,#882288,#aa33aa);">Confirmer</button>`;
+  let target = null;
+  const confirmBtn = document.getElementById('comedConfirm');
+  document.getElementById('comedTargets').querySelectorAll('.target-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      document.getElementById('comedTargets').querySelectorAll('.target-btn').forEach(x=>x.classList.remove('selected'));
+      b.classList.add('selected');
+      target = b.getAttribute('data-target');
+      confirmBtn.disabled = false;
+    });
+  });
+  confirmBtn.addEventListener('click', async () => {
+    confirmBtn.disabled = true;
+    await sb.from('night_actions').insert({
+      game_id: state.gameId, phase_number: state.game.phase_number,
+      player_id: state.playerId, action_type: actionType, target_id: target
+    });
+    if(actionType === 'wolf_kill'){
+      await sb.from('games').update({ last_wolf_victim_id: target }).eq('id', state.gameId);
+    }
+    if(actionType === 'crow_mark'){
+      await sb.from('games').update({ crow_target_id: target }).eq('id', state.gameId);
+    }
+    await markComedianRoleUsed(chosenRole);
+  });
+}
+
+async function markComedianRoleUsed(chosenRole){
+  const updated = [...state.comedianUsedRoles, chosenRole];
+  await sb.from('players').update({ comedian_used_roles: updated }).eq('id', state.playerId);
+  state.comedianUsedRoles = updated;
+  document.getElementById('actionPanelWrap').innerHTML = '<div class="action-panel"><div class="action-done">✓ Pouvoir emprunté utilisé</div></div>';
+}
+
+function hasAnyWolfDied(){
+  return state.players.some(p => ROLES[p.role_id]?.team === 'wolf' && !p.is_alive);
+}
+
+function renderInfectPanel(wrap){
+  if(state.myIsAlive === false){ wrap.innerHTML=''; return; }
+  const used = state.players.find(p=>p.id===state.playerId)?.has_used_power;
+  const targets = state.players.filter(p => p.is_alive && ROLES[p.role_id]?.team !== 'wolf');
+  let html = `<div class="action-panel"><div class="action-title">🧟 Infect Père des Loups</div>`;
+  if(used){
+    html += `<p style="font-size:.82rem;color:#8a7a9a;">Vous avez déjà utilisé votre infection. Vous tuez normalement avec les loups.</p>`;
+    wrap.innerHTML = html + '</div>';
+    return;
+  }
+  html += `<p style="font-size:.82rem;color:#e0d8f0;margin-bottom:10px;">Infectez une victime au lieu de la tuer — elle rejoindra les loups en secret. À usage unique.</p>
+    <div class="target-grid" id="infectTargets">${targets.map(t=>`<button class="target-btn" data-target="${t.id}">${escapeHtml(t.name)}</button>`).join('')}</div>
+    <button class="action-confirm" id="infectBtn" disabled style="margin-top:8px;background:linear-gradient(135deg,#2a6a2a,#3a8a3a);">🧟 Infecter</button>
+    <button class="btns" id="infectSkip" style="margin-top:8px;">Ne pas infecter, tuer normalement</button>
+    <div id="actionDoneMsg"></div></div>`;
+  wrap.innerHTML = html;
+  let target = null;
+  const btn = document.getElementById('infectBtn');
+  document.getElementById('infectTargets').querySelectorAll('.target-btn').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      document.getElementById('infectTargets').querySelectorAll('.target-btn').forEach(x=>x.classList.remove('selected'));
+      b.classList.add('selected'); target=b.getAttribute('data-target'); btn.disabled=false;
+    });
+  });
+  btn.addEventListener('click', async ()=>{
+    btn.disabled=true;
+    await sb.from('night_actions').insert({game_id:state.gameId, phase_number:state.game.phase_number, player_id:state.playerId, action_type:'infect', target_id:target});
+    await sb.from('players').update({has_used_power:true}).eq('id', state.playerId);
+    document.getElementById('actionDoneMsg').innerHTML='<div class="action-done">✓ Infection programmée</div>';
+    document.querySelectorAll('#actionPanelWrap button').forEach(b=>b.disabled=true);
+  });
+  document.getElementById('infectSkip').addEventListener('click', ()=>{
+    document.getElementById('actionDoneMsg').innerHTML='<div class="action-done">✓ Vous tuerez normalement avec les loups</div>';
+    document.querySelectorAll('#actionPanelWrap button').forEach(b=>b.disabled=true);
+  });
+}
+
+function renderDogWolfPanel(wrap){
+  wrap.innerHTML = `<div class="action-panel">
+    <div class="action-title">🐕 Chien-Loup : choisissez votre camp</div>
+    <p style="font-size:.82rem;color:#e0d8f0;margin-bottom:10px;">Décision définitive et secrète pour toute la partie.</p>
+    <button class="action-confirm" id="dwVillage" style="margin-bottom:8px;background:linear-gradient(135deg,#2a6020,#3a8030);">🧑 Rester villageois</button>
+    <button class="action-confirm" id="dwWolf" style="background:linear-gradient(135deg,#8b2020,#aa3030);">🐺 Rejoindre les loups</button>
+    <div id="actionDoneMsg"></div></div>`;
+  document.getElementById('dwVillage').addEventListener('click', async ()=>{
+    await sb.from('players').update({chosen_wolf_side:false}).eq('id', state.playerId);
+    document.getElementById('actionDoneMsg').innerHTML='<div class="action-done">✓ Vous restez villageois</div>';
+    document.querySelectorAll('#actionPanelWrap button').forEach(b=>b.disabled=true);
+  });
+  document.getElementById('dwWolf').addEventListener('click', async ()=>{
+    await sb.from('players').update({chosen_wolf_side:true}).eq('id', state.playerId);
+    document.getElementById('actionDoneMsg').innerHTML='<div class="action-done">✓ Vous rejoignez les loups</div>';
+    document.querySelectorAll('#actionPanelWrap button').forEach(b=>b.disabled=true);
+  });
+}
+
+function renderFoxPanel(wrap){
+  const used = state.players.find(p=>p.id===state.playerId)?.has_used_power;
+  if(used){ wrap.innerHTML = `<div class="action-panel"><div class="action-title">🦊 Vous avez perdu votre flair (déjà utilisé sans succès).</div></div>`; return; }
+  const others2 = state.players.filter(p=>p.is_alive && p.id!==state.playerId);
+  wrap.innerHTML = `<div class="action-panel"><div class="action-title">🦊 Flairez 3 joueurs</div>
+    <p style="font-size:.8rem;color:#e0d8f0;margin-bottom:8px;">Sélectionnez exactement 3 joueurs. Si l'un est loup, vous le saurez (sans savoir qui).</p>
+    <div class="target-grid" id="foxTargets">${others2.map(t=>`<button class="target-btn" data-target="${t.id}">${escapeHtml(t.name)}</button>`).join('')}</div>
+    <button class="action-confirm" id="foxBtn" disabled style="margin-top:8px;">Flairer</button>
+    <div id="actionDoneMsg"></div></div>`;
+  let sel = [];
+  const btn = document.getElementById('foxBtn');
+  document.getElementById('foxTargets').querySelectorAll('.target-btn').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const id=b.getAttribute('data-target');
+      if(sel.includes(id)){ sel=sel.filter(x=>x!==id); b.classList.remove('selected'); }
+      else if(sel.length<3){ sel.push(id); b.classList.add('selected'); }
+      btn.disabled = sel.length!==3;
+    });
+  });
+  btn.addEventListener('click', async ()=>{
+    btn.disabled=true;
+    const groupHasWolf = sel.some(id => ROLES[state.players.find(p=>p.id===id)?.role_id]?.team==='wolf');
+    await sb.from('night_actions').insert({game_id:state.gameId, phase_number:state.game.phase_number, player_id:state.playerId, action_type:'fox_sniff', target_id:sel[0]});
+    if(!groupHasWolf){
+      await sb.from('players').update({has_used_power:true}).eq('id', state.playerId);
+    }
+    document.getElementById('actionDoneMsg').innerHTML = groupHasWolf
+      ? '<div class="action-done">✓ Un loup se cache dans ce groupe !</div>'
+      : '<div class="action-done">✓ Aucun loup dans ce groupe. Vous perdez votre flair.</div>';
+    document.querySelectorAll('#actionPanelWrap button').forEach(b=>b.disabled=true);
+  });
+}
+
+function renderTwinRevealPanel(wrap, role){
+  const labels = {sjum:"👭 Sœur Jumelle", dsoeurs:"👯 Deux Sœurs", tfreres:"👨‍👦‍👦 Trois Frères"};
+  const groupRoles = role === 'tfreres' ? ['tfreres'] : (role==='sjum'?['sjum']:['dsoeurs']);
+  const allies = state.players.filter(p => groupRoles.includes(p.role_id) && p.id !== state.playerId);
+  wrap.innerHTML = `<div class="action-panel"><div class="action-title">${labels[role]}</div>
+    <p style="font-size:.85rem;color:#e0d8f0;line-height:1.6;">
+      ${allies.length ? "Vous reconnaissez : <b>"+allies.map(a=>escapeHtml(a.name)).join(', ')+"</b>. Vous savez qu'ils/elles sont du village." : "Vous semblez seul(e) dans ce lien fraternel cette partie."}
+    </p>
+    <button class="action-confirm" id="twinOk" style="margin-top:10px;">J'ai compris</button>
+    <div id="actionDoneMsg"></div></div>`;
+  document.getElementById('twinOk').addEventListener('click', ()=>{
+    document.getElementById('actionDoneMsg').innerHTML='<div class="action-done">✓</div>';
+    document.querySelectorAll('#actionPanelWrap button').forEach(b=>b.disabled=true);
+  });
+}
+
+function renderGypsyPanel(wrap){
+  const lastDead = state.players.filter(p=>!p.is_alive).slice(-1)[0];
+  wrap.innerHTML = `<div class="action-panel"><div class="action-title">🔯 Gitane</div>
+    <p style="font-size:.85rem;color:#e0d8f0;line-height:1.6;">
+      ${lastDead ? `Le dernier joueur éliminé était <b>${escapeHtml(lastDead.name)}</b> : ${ROLES[lastDead.role_id]?.icon||'?'} ${ROLES[lastDead.role_id]?.name||'Inconnu'}.` : "Personne n'est encore mort dans cette partie."}
+    </p>
+    <button class="action-confirm" id="gypsyOk" style="margin-top:10px;">J'ai compris</button>
+    <div id="actionDoneMsg"></div></div>`;
+  document.getElementById('gypsyOk').addEventListener('click', ()=>{
+    document.getElementById('actionDoneMsg').innerHTML='<div class="action-done">✓</div>';
+    document.querySelectorAll('#actionPanelWrap button').forEach(b=>b.disabled=true);
+  });
+}
+
+async function renderWitchPanel(wrap){
+  const victimId = state.game.last_wolf_victim_id;
+  const victim = victimId ? state.players.find(p => p.id === victimId) : null;
+  const saveUsed = state.witchSavePotionUsed;
+  const killUsed = state.witchKillPotionUsed;
+
+  let html = `<div class="action-panel"><div class="action-title">🧙 Pouvoirs de la Sorcière</div>`;
+
+  if(victim && !saveUsed){
+    html += `<p style="font-size:.82rem;color:#e0d8f0;margin-bottom:10px;">Les loups s'attaquent à <b>${escapeHtml(victim.name)}</b> cette nuit.</p>
+      <button class="action-confirm" id="witchSaveBtn" style="margin-bottom:8px;background:linear-gradient(135deg,#2a8a4a,#3aaa5a);">💚 Utiliser la potion de vie</button>`;
+  } else if(victim && saveUsed){
+    html += `<p style="font-size:.82rem;color:#8a7a9a;margin-bottom:10px;">Potion de vie déjà utilisée. ${escapeHtml(victim.name)} est en danger.</p>`;
+  } else {
+    html += `<p style="font-size:.82rem;color:#8a7a9a;margin-bottom:10px;">Aucune attaque de loups détectée cette nuit.</p>`;
+  }
+
+  if(!killUsed){
+    const others = state.players.filter(p => p.is_alive && p.id !== state.playerId);
+    html += `<div style="margin-top:8px;">
+      <p style="font-size:.8rem;color:#e0d8f0;margin-bottom:8px;">💀 Potion de mort (à usage unique) :</p>
+      <div class="target-grid" id="witchKillTargets">
+        ${others.map(t => `<button class="target-btn" data-target="${t.id}">${escapeHtml(t.name)}</button>`).join('')}
+      </div>
+      <button class="action-confirm" id="witchKillBtn" disabled style="margin-top:8px;background:linear-gradient(135deg,#8a2020,#aa3030);">☠️ Utiliser la potion de mort</button>
+    </div>`;
+  }
+
+  html += `<button class="btns" id="witchSkipBtn" style="margin-top:10px;">Ne rien faire cette nuit</button>
+    <div id="actionDoneMsg"></div></div>`;
+
+  wrap.innerHTML = html;
+
+  const saveBtn = document.getElementById('witchSaveBtn');
+  if(saveBtn){
+    saveBtn.addEventListener('click', async () => {
+      saveBtn.disabled = true;
+      await sb.from('night_actions').insert({
+        game_id: state.gameId, phase_number: state.game.phase_number,
+        player_id: state.playerId, action_type: 'witch_save', target_id: victimId
+      });
+      await sb.from('players').update({ witch_save_used: true }).eq('id', state.playerId);
+      document.getElementById('actionDoneMsg').innerHTML = '<div class="action-done">✓ Potion de vie utilisée</div>';
+      document.querySelectorAll('#actionPanelWrap button').forEach(b=>b.disabled=true);
+    });
+  }
+
+  let killTarget = null;
+  const killBtn = document.getElementById('witchKillBtn');
+  const killTargetsWrap = document.getElementById('witchKillTargets');
+  if(killTargetsWrap){
+    killTargetsWrap.querySelectorAll('.target-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        killTargetsWrap.querySelectorAll('.target-btn').forEach(b=>b.classList.remove('selected'));
+        btn.classList.add('selected');
+        killTarget = btn.getAttribute('data-target');
+        killBtn.disabled = false;
+      });
+    });
+  }
+  if(killBtn){
+    killBtn.addEventListener('click', async () => {
+      killBtn.disabled = true;
+      await sb.from('night_actions').insert({
+        game_id: state.gameId, phase_number: state.game.phase_number,
+        player_id: state.playerId, action_type: 'witch_kill', target_id: killTarget
+      });
+      await sb.from('players').update({ witch_kill_used: true }).eq('id', state.playerId);
+      document.getElementById('actionDoneMsg').innerHTML = '<div class="action-done">✓ Potion de mort utilisée</div>';
+      document.querySelectorAll('#actionPanelWrap button').forEach(b=>b.disabled=true);
+    });
+  }
+
+  const skipBtn = document.getElementById('witchSkipBtn');
+  if(skipBtn){
+    skipBtn.addEventListener('click', () => {
+      document.getElementById('actionDoneMsg').innerHTML = '<div class="action-done">✓ Vous passez cette nuit</div>';
+      document.querySelectorAll('#actionPanelWrap button').forEach(b=>b.disabled=true);
+    });
+  }
+}
+
+function renderLittleGirlPanel(wrap){
+  wrap.innerHTML = `<div class="action-panel">
+    <div class="action-title">👧 Petite Fille</div>
+    <p style="font-size:.82rem;color:#e0d8f0;line-height:1.6;margin-bottom:10px;">
+      Vous pouvez entrouvrir les yeux pour espionner les loups. Risqué : s'ils vous repèrent, vous mourrez à la place de leur victime !
+    </p>
+    <button class="action-confirm" id="spyBtn" style="background:linear-gradient(135deg,#6a2a8a,#8a3aaa);">👁️ Espionner les loups (risqué)</button>
+    <button class="btns" id="noSpyBtn" style="margin-top:8px;">Rester prudente, ne rien faire</button>
+    <div id="actionDoneMsg"></div>
+  </div>`;
+  document.getElementById('spyBtn').addEventListener('click', async () => {
+    await sb.from('night_actions').insert({
+      game_id: state.gameId, phase_number: state.game.phase_number,
+      player_id: state.playerId, action_type: 'spy_wolves', target_id: null
+    });
+    document.getElementById('actionDoneMsg').innerHTML = "<div class=\"action-done\">✓ Vous espionnez dans l'ombre...</div>";
+    document.querySelectorAll('#actionPanelWrap button').forEach(b=>b.disabled=true);
+  });
+  document.getElementById('noSpyBtn').addEventListener('click', () => {
+    document.getElementById('actionDoneMsg').innerHTML = '<div class="action-done">✓ Vous restez prudente</div>';
+    document.querySelectorAll('#actionPanelWrap button').forEach(b=>b.disabled=true);
+  });
+}
+
+function renderHunterShotPanel(wrap, me){
+  const targets = state.players.filter(p => p.is_alive && p.id !== state.playerId);
+  if(targets.length === 0){ wrap.innerHTML = ''; return; }
+  wrap.innerHTML = `<div class="action-panel" style="border-color:rgba(255,150,50,.4);background:rgba(180,80,0,.1);">
+    <div class="action-title" style="color:#ffaa55;">🏹 Tir de vengeance du Chasseur</div>
+    <p style="font-size:.82rem;color:#e0d8f0;margin-bottom:10px;">Vous êtes mort(e), mais avant de partir, vous tirez une dernière flèche.</p>
+    <div class="target-grid" id="hunterTargets">
+      ${targets.map(t => `<button class="target-btn" data-target="${t.id}">${escapeHtml(t.name)}</button>`).join('')}
+    </div>
+    <button class="action-confirm" id="hunterShootBtn" disabled style="margin-top:8px;background:linear-gradient(135deg,#aa5500,#cc7700);">🎯 Tirer</button>
+    <div id="actionDoneMsg"></div>
+  </div>`;
+
+  let target = null;
+  const shootBtn = document.getElementById('hunterShootBtn');
+  document.getElementById('hunterTargets').querySelectorAll('.target-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById('hunterTargets').querySelectorAll('.target-btn').forEach(b=>b.classList.remove('selected'));
+      btn.classList.add('selected');
+      target = btn.getAttribute('data-target');
+      shootBtn.disabled = false;
+    });
+  });
+  shootBtn.addEventListener('click', async () => {
+    shootBtn.disabled = true;
+    await sb.from('players').update({ has_used_power: true }).eq('id', state.playerId);
+    const victim = state.players.find(p => p.id === target);
+    await killPlayer(target);
+    await sb.from('game_events').insert({
+      game_id: state.gameId, phase_number: state.game.phase_number, event_type:'death',
+      content: `🏹 Dans un dernier souffle, le Chasseur abat ${victim.name} !`
+    });
+    await refreshPlayers();
+    const wonInfo = await checkWinCondition();
+    if(wonInfo) await endGame(wonInfo);
+    document.getElementById('actionDoneMsg').innerHTML = '<div class="action-done">✓ Tir effectué</div>';
+    document.querySelectorAll('#actionPanelWrap button').forEach(b=>b.disabled=true);
+  });
+}
+
+function buildTargetPanel(title, targets, actionType, maxSelect=1){
+  return `<div class="action-panel" data-action="${actionType}" data-max="${maxSelect}">
+    <div class="action-title">${title}</div>
+    <div class="target-grid">
+      ${targets.map(t => `<button class="target-btn" data-target="${t.id}">${escapeHtml(t.name)}</button>`).join('')}
+    </div>
+    <button class="action-confirm" id="confirmAction" disabled>Confirmer</button>
+    <div id="actionDoneMsg"></div>
+  </div>`;
+}
+
+let selectedTargets = [];
+function attachActionHandlers(){
+  selectedTargets = [];
+  const panel = document.querySelector('.action-panel[data-action]');
+  if(!panel) return;
+  const actionType = panel.getAttribute('data-action');
+  const maxSel = parseInt(panel.getAttribute('data-max'));
+  const confirmBtn = document.getElementById('confirmAction');
+
+  panel.querySelectorAll('.target-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-target');
+      if(selectedTargets.includes(id)){
+        selectedTargets = selectedTargets.filter(x=>x!==id);
+        btn.classList.remove('selected');
+      } else {
+        if(selectedTargets.length >= maxSel){
+          // replace oldest if max 1
+          if(maxSel === 1){
+            panel.querySelectorAll('.target-btn').forEach(b=>b.classList.remove('selected'));
+            selectedTargets = [];
+          } else return;
+        }
+        selectedTargets.push(id);
+        btn.classList.add('selected');
+      }
+      confirmBtn.disabled = selectedTargets.length !== maxSel;
+    });
+  });
+
+  confirmBtn.addEventListener('click', async () => {
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = "Envoi...";
+    try {
+      if(actionType === 'cupid_link'){
+        await sb.from('players').update({ in_love_with: selectedTargets[1] }).eq('id', selectedTargets[0]);
+        await sb.from('players').update({ in_love_with: selectedTargets[0] }).eq('id', selectedTargets[1]);
+      } else if(actionType === 'wild_child_pick'){
+        await sb.from('players').update({ wild_child_model_id: selectedTargets[0] }).eq('id', state.playerId);
+      } else if(actionType === 'crow_mark'){
+        await sb.from('games').update({ crow_target_id: selectedTargets[0] }).eq('id', state.gameId);
+      } else {
+        await sb.from('night_actions').insert({
+          game_id: state.gameId, phase_number: state.game.phase_number,
+          player_id: state.playerId, action_type: actionType, target_id: selectedTargets[0]
+        });
+        // Let the witch see the wolves' chosen victim live, the same night
+        if(actionType === 'wolf_kill'){
+          await sb.from('games').update({ last_wolf_victim_id: selectedTargets[0] }).eq('id', state.gameId);
+        }
+      }
+      document.getElementById('actionDoneMsg').innerHTML = '<div class="action-done">✓ Action enregistrée</div>';
+      panel.querySelectorAll('.target-btn').forEach(b => b.disabled = true);
+    } catch(e) {
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = "Confirmer";
+    }
+  });
+}
+
+// ============================================================
+// VOTE PANEL (day_vote)
+// ============================================================
+function renderVotePanel(){
+  const wrap = document.getElementById('votePanelWrap');
+  const me = state.players.find(p => p.id === state.playerId);
+  if(!me || !me.is_alive || state.game.status !== 'day_vote'){
+    wrap.innerHTML = '';
+    return;
+  }
+  if(me.can_vote === false){
+    wrap.innerHTML = `<div class="vote-panel"><div class="vote-title">🤪 Vous avez perdu votre droit de vote (Idiot du Village révélé).</div></div>`;
+    return;
+  }
+  const isMayor = state.game.mayor_id === state.playerId;
+  const others = state.players.filter(p => p.is_alive && p.id !== state.playerId);
+  wrap.innerHTML = `<div class="vote-panel">
+    <div class="vote-title">⚖️ Votez pour éliminer un suspect ${isMayor ? '(votre vote compte double 🎖️)' : ''}</div>
+    <div class="target-grid" id="voteTargets">
+      ${others.map(t => `<button class="target-btn" data-target="${t.id}">${escapeHtml(t.name)}</button>`).join('')}
+    </div>
+    <button class="action-confirm" id="confirmVote" disabled>Confirmer mon vote</button>
+    <div id="voteDoneMsg"></div>
+  </div>`;
+
+  let selectedVote = null;
+  const confirmBtn = document.getElementById('confirmVote');
+  wrap.querySelectorAll('.target-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      wrap.querySelectorAll('.target-btn').forEach(b=>b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedVote = btn.getAttribute('data-target');
+      confirmBtn.disabled = false;
+    });
+  });
+  confirmBtn.addEventListener('click', async () => {
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = "Envoi...";
+    await sb.from('day_votes').insert({
+      game_id: state.gameId, phase_number: state.game.phase_number,
+      voter_id: state.playerId, target_id: selectedVote
+    });
+    document.getElementById('voteDoneMsg').innerHTML = '<div class="action-done">✓ Vote enregistré</div>';
+    wrap.querySelectorAll('.target-btn').forEach(b => b.disabled = true);
+  });
+}
+
+// ============================================================
+// EVENTS FEED
+// ============================================================
+async function loadRecentEvents(){
+  const { data } = await sb.from('game_events').select().eq('game_id', state.gameId).order('created_at', {ascending:true}).limit(30);
+  if(data){
+    document.getElementById('eventsFeed').innerHTML = data.map(renderEventItem).join('');
+    scrollEventsToBottom();
+  }
+}
+function renderEventItem(ev){
+  const cls = ev.event_type === 'death' ? 'event-death' : (ev.event_type === 'game_end' ? 'event-win' : 'event-info');
+  return `<div class="event-item ${cls}">${escapeHtml(ev.content)}</div>`;
+}
+function onNewEvent(ev){
+  const feed = document.getElementById('eventsFeed');
+  if(feed) feed.insertAdjacentHTML('beforeend', renderEventItem(ev));
+  scrollEventsToBottom();
+}
+function scrollEventsToBottom(){
+  const body = document.getElementById('gameBody');
+  if(body) body.scrollTop = body.scrollHeight;
+}
+
+// ============================================================
+// CHAT
+// ============================================================
+function subscribeToChat(){
+  loadChatHistory();
+}
+async function loadChatHistory(){
+  const { data } = await sb.from('chat_messages').select().eq('game_id', state.gameId).order('created_at',{ascending:true}).limit(100);
+  if(data){
+    document.getElementById('chatMessages').innerHTML = '';
+    data.forEach(renderChatMsg);
+    scrollChatBottom();
+  }
+}
+function renderChatTabs(){
+  const wolvesTab = document.getElementById('chatTabWolves');
+  const isWolf = state.myRole === 'loup';
+  if(isWolf){
+    wolvesTab.classList.remove('locked');
+  } else {
+    wolvesTab.classList.add('locked');
+  }
+}
+document.getElementById('chatTabVillage').addEventListener('click', () => switchChannel('village'));
+document.getElementById('chatTabWolves').addEventListener('click', () => {
+  if(state.myRole === 'loup') switchChannel('wolves');
+});
+function switchChannel(ch){
+  state.currentChannel = ch;
+  document.getElementById('chatTabVillage').classList.toggle('on', ch==='village');
+  document.getElementById('chatTabWolves').classList.toggle('on', ch==='wolves');
+  loadChatHistory();
+}
+function onNewChatMessage(msg){
+  if(msg.channel !== state.currentChannel) return;
+  renderChatMsg(msg);
+  scrollChatBottom();
+}
+function renderChatMsg(msg){
+  const wrap = document.getElementById('chatMessages');
+  if(msg.channel !== state.currentChannel) return;
+  const cls = msg.channel === 'wolves' ? 'wolf-channel' : '';
+  const div = document.createElement('div');
+  div.className = 'chat-msg ' + cls;
+  div.innerHTML = `<span class="who">${escapeHtml(msg.player_name)}:</span> <span class="body">${escapeHtml(msg.content)}</span>`;
+  wrap.appendChild(div);
+}
+function scrollChatBottom(){
+  const el = document.getElementById('chatMessages');
+  el.scrollTop = el.scrollHeight;
+}
+document.getElementById('chatSend').addEventListener('click', sendChat);
+document.getElementById('chatInput').addEventListener('keyup', (e) => { if(e.key==='Enter') sendChat(); });
+async function sendChat(){
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if(!text) return;
+  if(state.currentChannel === 'wolves' && state.myRole !== 'loup') return;
+  input.value = '';
+  await sb.from('chat_messages').insert({
+    game_id: state.gameId, player_id: state.playerId, player_name: state.playerName,
+    channel: state.currentChannel, content: text
+  });
+}
+
+// ============================================================
+// TIMER + PHASE AUTOMATION (host-driven)
+// ============================================================
+function startTimer(){
+  if(state.timerInterval) clearInterval(state.timerInterval);
+  state.timerInterval = setInterval(updateTimer, 1000);
+  updateTimer();
+}
+function updateTimer(){
+  if(!state.game || !state.game.phase_started_at) return;
+  const started = new Date(state.game.phase_started_at).getTime();
+  const duration = (state.game.phase_duration_seconds || 45) * 1000;
+  const elapsed = Date.now() - started;
+  const remaining = Math.max(0, Math.ceil((duration - elapsed)/1000));
+  const m = Math.floor(remaining/60), s = remaining%60;
+  document.getElementById('timerBox').textContent = `${m}:${s.toString().padStart(2,'0')}`;
+
+  if(remaining <= 0 && state.isHost){
+    clearInterval(state.timerInterval);
+    advancePhase();
+  }
+}
+
+async function advancePhase(){
+  const status = state.game.status;
+  if(status === 'night'){
+    await resolveNight();
+  } else if(status === 'day_discuss'){
+    await sb.from('games').update({
+      status: 'day_vote', phase_started_at: new Date().toISOString(), phase_duration_seconds: 40
+    }).eq('id', state.gameId);
+  } else if(status === 'day_vote'){
+    await resolveVote();
+  }
+}
+
+// Centralized kill function - handles lover cascade + hunter revenge trigger
+async function killPlayer(playerId, attackerWolfId=null){
+  const victim = state.players.find(p => p.id === playerId);
+  if(!victim || !victim.is_alive) return '';
+  await sb.from('players').update({ is_alive: false }).eq('id', playerId);
+  let msg = '';
+  // lover cascade
+  if(victim.in_love_with){
+    const lover = state.players.find(p => p.id === victim.in_love_with);
+    if(lover && lover.is_alive && lover.id !== playerId){
+      await sb.from('players').update({ is_alive: false }).eq('id', lover.id);
+      msg += ` 💔 ${lover.name}, fou(lle) de chagrin, est mort(e) à son tour.`;
+      if(lover.role_id === 'chasseur'){
+        await sb.from('game_events').insert({
+          game_id: state.gameId, phase_number: state.game.phase_number, event_type:'info',
+          content: `🏹 ${lover.name} (Chasseur) tombe sans pouvoir tirer, pris(e) de court par le chagrin.`
+        });
+      }
+    }
+  }
+  if(victim.role_id === 'chasseur'){
+    msg += ` 🏹 ${victim.name} était le Chasseur — un tir de vengeance va être déclenché.`;
+    state.pendingHunterDeath = true;
+  }
+  // wild child cascade: if victim was someone's model, that wild child becomes a wolf
+  const wildChildren = state.players.filter(p => p.is_alive && p.wild_child_model_id === playerId && p.role_id === 'enfant');
+  for(const wc of wildChildren){
+    await sb.from('players').update({ role_id: 'loup' }).eq('id', wc.id);
+    msg += ` 🌿 ${wc.name} (Enfant Sauvage) bascule du côté des loups, son modèle ayant péri !`;
+  }
+  // rusty knight: if a wolf killed him, mark that wolf to die in 3 days
+  if(victim.role_id === 'cheval' && attackerWolfId){
+    await sb.from('players').update({
+      rusty_knight_poisoned_wolf_id: attackerWolfId,
+      rusty_knight_poison_day: (state.game.phase_number||0) + 3
+    }).eq('id', playerId);
+    msg += ` ⚔️ En mourant, le Chevalier à l'Épée Rouillée empoisonne son agresseur — il périra dans 3 jours.`;
+  }
+  return msg;
+}
+
+async function resolveNight(){
+  const phase = state.game.phase_number;
+  const { data: actions } = await sb.from('night_actions').select().eq('game_id', state.gameId).eq('phase_number', phase);
+
+  let killedId = null;
+  let bonusKilledId = null; // Grand Méchant Loup 2nd victim
+  let infectId = null;
+  let savedByGuardId = null;
+  let witchSaveId = null;
+  let witchKillId = null;
+  let spied = false;
+  const wolfActorIds = [];
+
+  (actions||[]).forEach(a => {
+    if(a.action_type === 'wolf_kill'){
+      if(killedId === null) killedId = a.target_id;
+      else bonusKilledId = a.target_id;
+      wolfActorIds.push(a.player_id);
+    }
+    if(a.action_type === 'guard_protect') savedByGuardId = a.target_id;
+    if(a.action_type === 'witch_save') witchSaveId = a.target_id;
+    if(a.action_type === 'witch_kill') witchKillId = a.target_id;
+    if(a.action_type === 'spy_wolves') spied = true;
+    if(a.action_type === 'infect') infectId = a.target_id;
+  });
+
+  let msgs = [];
+  const attackerWolf = wolfActorIds[0] || null;
+
+  // Infection takes priority over death for that target
+  if(infectId && infectId === killedId){
+    const infected = state.players.find(p => p.id === infectId);
+    if(infected){
+      await sb.from('players').update({ role_id: 'loup', is_infected: true }).eq('id', infectId);
+      msgs.push(`🧟 ${infected.name} a disparu mystérieusement cette nuit... et rejoint l'ombre des loups.`);
+    }
+    killedId = null; // no normal death message for this target
+  }
+
+  // Wolf attack resolution (primary victim)
+  if(killedId && killedId !== savedByGuardId && killedId !== witchSaveId){
+    const victim = state.players.find(p => p.id === killedId);
+    if(victim){
+      const cascadeMsg = await killPlayer(killedId, attackerWolf);
+      msgs.push(`💀 ${victim.name} a été retrouvé(e) mort(e) ce matin, dévoré(e) par les loups.${cascadeMsg}`);
+    }
+  } else if(killedId && (killedId === savedByGuardId || killedId === witchSaveId)){
+    msgs.push("🛡️ Les loups ont attaqué cette nuit, mais la victime a été sauvée à temps !");
+  } else if(!infectId) {
+    msgs.push("🌙 Cette nuit fut étrangement calme. Personne n'est mort des crocs des loups.");
+  }
+
+  // Grand Méchant Loup bonus kill
+  if(bonusKilledId && bonusKilledId !== savedByGuardId && bonusKilledId !== witchSaveId){
+    const victim3 = state.players.find(p => p.id === bonusKilledId);
+    if(victim3 && victim3.is_alive){
+      const cascadeMsgB = await killPlayer(bonusKilledId, attackerWolf);
+      msgs.push(`🦷 Le Grand Méchant Loup dévore une seconde victime : ${victim3.name}.${cascadeMsgB}`);
+    }
+  }
+
+  // Witch kill potion
+  if(witchKillId){
+    const victim2 = state.players.find(p => p.id === witchKillId);
+    if(victim2 && victim2.is_alive){
+      const cascadeMsg2 = await killPlayer(witchKillId);
+      msgs.push(`☠️ La Sorcière a utilisé sa potion de mort sur ${victim2.name}.${cascadeMsg2}`);
+    }
+  }
+
+  // Little girl spying risk (~30% chance of being caught if she spied and wolves acted)
+  if(spied && killedId){
+    const girl = state.players.find(p => p.role_id === 'petite_fille' && p.is_alive);
+    if(girl && Math.random() < 0.3){
+      const cascadeMsg3 = await killPlayer(girl.id);
+      msgs.push(`👁️ La Petite Fille a été repérée en train d'espionner... 💀 ${girl.name} est éliminée par les loups !${cascadeMsg3}`);
+    }
+  }
+
+  // Rusty knight poison timer countdown
+  const poisonedWolves = state.players.filter(p => p.is_alive && p.rusty_knight_poison_day === phase);
+  for(const pw of poisonedWolves){
+    await killPlayer(pw.id);
+    msgs.push(`⚔️ Le poison du Chevalier à l'Épée Rouillée fait enfin effet : ${pw.name} succombe.`);
+  }
+
+  // store last wolf victim for witch panel next time (reset since resolved)
+  await sb.from('games').update({ last_wolf_victim_id: null, crow_target_id: null }).eq('id', state.gameId);
+
+  for(const m of msgs){
+    await sb.from('game_events').insert({ game_id: state.gameId, phase_number: phase, event_type:'death', content: m });
+  }
+
+  // refresh players before checking win / hunter trigger
+  await refreshPlayers();
+
+  if(state.pendingHunterDeath){
+    state.pendingHunterDeath = false;
+    await sb.from('game_events').insert({
+      game_id: state.gameId, phase_number: phase, event_type:'info',
+      content: "🏹 Le Chasseur abattu cette nuit aura l'occasion de tirer au prochain tour si la partie continue."
+    });
+  }
+
+  const wonInfo = await checkWinCondition();
+  if(wonInfo) { await endGame(wonInfo); return; }
+
+  await sb.from('game_events').insert({
+    game_id: state.gameId, phase_number: phase, event_type: 'phase_change',
+    content: "☀️ Le village se réveille. Discutez pour démasquer les loups."
+  });
+
+  await sb.from('games').update({
+    status: 'day_discuss', phase_started_at: new Date().toISOString(), phase_duration_seconds: 90
+  }).eq('id', state.gameId);
+}
+
+async function resolveVote(){
+  const phase = state.game.phase_number;
+  const { data: votes } = await sb.from('day_votes').select().eq('game_id', state.gameId).eq('phase_number', phase);
+
+  // weight mayor's vote double
+  const tally = {};
+  (votes||[]).forEach(v => {
+    const weight = (state.game.mayor_id === v.voter_id) ? 2 : 1;
+    tally[v.target_id] = (tally[v.target_id]||0) + weight;
+  });
+  // Corbeau bonus: marked target gets +2
+  if(state.game.crow_target_id){
+    tally[state.game.crow_target_id] = (tally[state.game.crow_target_id]||0) + 2;
+  }
+
+  let maxVotes = 0, eliminated = null, tie = false;
+  for(const [pid, count] of Object.entries(tally)){
+    if(count > maxVotes){ maxVotes = count; eliminated = pid; tie = false; }
+    else if(count === maxVotes){ tie = true; }
+  }
+
+  let msg;
+  const isFirstVotePhase = (phase === 1);
+
+  if((!eliminated || tie)){
+    // Scapegoat dies instead of nobody, if configured and alive
+    const scapegoat = state.players.find(p => p.role_id === 'bouc' && p.is_alive);
+    if(tie && scapegoat){
+      const cascadeSG = await killPlayer(scapegoat.id);
+      msg = `🐐 Égalité au vote ! Le Bouc Émissaire ${scapegoat.name} est sacrifié à la place du village.${cascadeSG}`;
+    } else {
+      msg = "⚖️ Le vote est partagé, aucun consensus. Personne n'est éliminé aujourd'hui.";
+    }
+  } else {
+    const victim = state.players.find(p => p.id === eliminated);
+
+    if(victim.role_id === 'idiot' && !victim.idiot_revealed){
+      await sb.from('players').update({ idiot_revealed: true, can_vote: false }).eq('id', eliminated);
+      msg = `🤪 Le village a voté contre ${victim.name}... qui révèle être l'Idiot du Village ! Il/elle survit mais perd son droit de vote.`;
+    } else if(victim.role_id === 'ange' && isFirstVotePhase){
+      // Angel wins solo if eliminated on the very first vote
+      await sb.from('players').update({ is_alive: false }).eq('id', eliminated);
+      await sb.from('games').update({ angel_won: true }).eq('id', state.gameId);
+      msg = `😇 Le village élimine ${victim.name} dès le premier vote... révélant l'Ange ! Il/elle remporte la partie seul(e) !`;
+      await sb.from('game_events').insert({ game_id: state.gameId, phase_number: phase, event_type:'death', content: msg });
+      await endGame({ winner:'solo', message: `🏆 L'Ange (${victim.name}) a manigancé sa propre élimination dès le premier jour et gagne seul !` });
+      return;
+    } else {
+      const cascadeMsg = await killPlayer(eliminated);
+      msg = `⚖️ Le village a voté. ${victim.name} a été banni(e) et est éliminé(e).${cascadeMsg}`;
+      if(state.game.mayor_id === eliminated){
+        await sb.from('games').update({ mayor_id: null }).eq('id', state.gameId);
+      }
+    }
+  }
+
+  await sb.from('game_events').insert({
+    game_id: state.gameId, phase_number: phase, event_type:'death', content: msg
+  });
+
+  await refreshPlayers();
+  const wonInfo = await checkWinCondition();
+  if(wonInfo){ await endGame(wonInfo); return; }
+
+  await sb.from('game_events').insert({
+    game_id: state.gameId, phase_number: phase+1, event_type:'phase_change',
+    content: "🌙 La nuit retombe sur le village..."
+  });
+
+  await sb.from('games').update({
+    status: 'night', phase_number: phase+1, phase_started_at: new Date().toISOString(), phase_duration_seconds: 45
+  }).eq('id', state.gameId);
+}
+
+async function checkWinCondition(){
+  const { data: players } = await sb.from('players').select().eq('game_id', state.gameId);
+  const alive = (players||[]).filter(p => p.is_alive);
+
+  // Flutist win: every living player is enchanted (flutist excluded from the check on himself)
+  const flutist = alive.find(p => p.role_id === 'flute');
+  if(flutist){
+    const othersAlive = alive.filter(p => p.id !== flutist.id);
+    if(othersAlive.length > 0 && othersAlive.every(p => p.is_enchanted)){
+      return { winner:'solo', message: `🎶 Tous les villageois dansent, ensorcelés par la mélodie du Joueur de Flûte (${flutist.name}). Il/elle gagne seul(e) !` };
+    }
+  }
+
+  function effectiveTeam(p){
+    if(p.role_id === 'chienloup'){
+      return p.chosen_wolf_side === true ? 'wolf' : 'village';
+    }
+    return ROLES[p.role_id]?.team;
+  }
+
+  const aliveWolves = alive.filter(p => effectiveTeam(p) === 'wolf');
+  const aliveVillage = alive.filter(p => effectiveTeam(p) === 'village');
+
+  if(aliveWolves.length === 0){
+    return { winner:'village', message: "🏆 Tous les loups ont été éliminés. Le village remporte la partie !" };
+  }
+  if(aliveVillage.length === 0){
+    return { winner:'wolves', message: "🐺 Les loups ont dévoré tout le village. Les loups remportent la partie !" };
+  }
+  return null;
+}
+
+async function endGame(info){
+  await sb.from('game_events').insert({
+    game_id: state.gameId, phase_number: state.game.phase_number, event_type:'game_end', content: info.message
+  });
+  await sb.from('games').update({ status:'ended', winner: info.winner }).eq('id', state.gameId);
+}
+
+async function showEndScreen(){
+  if(state.timerInterval) clearInterval(state.timerInterval);
+  const { data: players } = await sb.from('players').select().eq('game_id', state.gameId);
+  const winner = state.game.winner;
+
+  show('sEnd');
+  const emoji = winner === 'wolves' ? '🐺' : '🏆';
+  const title = winner === 'wolves' ? "Les Loups l'emportent !" : "Le Village triomphe !";
+  document.getElementById('endEmoji').textContent = emoji;
+  document.getElementById('endTitle').textContent = title;
+  document.getElementById('endSub').textContent = "La partie est terminée. Voici qui était qui :";
+  document.getElementById('endRolesList').innerHTML = (players||[]).map(p => {
+    const role = ROLES[p.role_id];
+    return `<div class="end-role-row">
+      <span>${escapeHtml(p.name)} ${p.is_alive ? '' : '💀'}</span>
+      <span>${role ? role.icon+' '+role.name : '?'}</span>
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+function escapeHtml(str){
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// allow Enter key on home inputs
+document.getElementById('joinCode').addEventListener('keyup', e => { if(e.key==='Enter') document.getElementById('joinName').focus(); });
+document.getElementById('joinName').addEventListener('keyup', e => { if(e.key==='Enter') document.getElementById('btnJoin').click(); });
+document.getElementById('hostName').addEventListener('keyup', e => { if(e.key==='Enter') document.getElementById('btnCreate').click(); });
+
+</script>
+</body>
+</html>
